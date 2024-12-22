@@ -7,8 +7,16 @@ interface ChunkProps {
 }
 
 const ChunkCard: React.FC<ChunkProps> = ({ chunk }) => {
+    // Ensure chunk has all required properties with default values
+    const safeChunk = {
+        chunk: chunk.chunk || '',
+        pronunciation: chunk.pronunciation || '',
+        chinese_meaning: chunk.chinese_meaning || '',
+        suitable_scenes: Array.isArray(chunk.suitable_scenes) ? chunk.suitable_scenes : [],
+    };
+
     const playAudio = () => {
-        const utterance = new SpeechSynthesisUtterance(chunk.chunk);
+        const utterance = new SpeechSynthesisUtterance(safeChunk.chunk);
         utterance.lang = 'en-US';
         utterance.rate = 0.8;
         utterance.pitch = 1;
@@ -23,19 +31,21 @@ const ChunkCard: React.FC<ChunkProps> = ({ chunk }) => {
     return (
         <div className={styles.card}>
             <div className={styles.cardContent} onClick={playAudio}>
-                <h3 className={styles.chunk}>{chunk.chunk}</h3>
-                <p className={styles.pronunciation}>{chunk.pronunciation}</p>
-                <p className={styles.meaning}>{chunk.chinese_meaning}</p>
-                <div className={styles.scenes}>
-                    {chunk.suitable_scenes.map((scene, index) => (
-                        <span key={index} className={styles.scene}>
-                            {scene}
-                        </span>
-                    ))}
-                </div>
+                <h3 className={styles.chunk}>{safeChunk.chunk}</h3>
+                <p className={styles.pronunciation}>{safeChunk.pronunciation}</p>
+                <p className={styles.meaning}>{safeChunk.chinese_meaning}</p>
+                {safeChunk.suitable_scenes.length > 0 && (
+                    <div className={styles.scenes}>
+                        {safeChunk.suitable_scenes.map((scene, index) => (
+                            <span key={index} className={styles.scene}>
+                                {scene}
+                            </span>
+                        ))}
+                    </div>
+                )}
             </div>
             <div className={styles.cardActions}>
-                <a href={getYouglishUrl(chunk.chunk)} target="_blank" rel="noopener noreferrer" className={styles.actionButton}>
+                <a href={getYouglishUrl(safeChunk.chunk)} target="_blank" rel="noopener noreferrer" className={styles.actionButton}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
                         <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>

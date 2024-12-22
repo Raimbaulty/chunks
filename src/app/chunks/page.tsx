@@ -1,7 +1,7 @@
 'use client';
 
-import ChunkList from '@/components/ChunkList';
+import SceneList from '@/components/SceneList';
 
 export default function ChunksPage() {
-    return <ChunkList />;
+    return <SceneList />;
 } 

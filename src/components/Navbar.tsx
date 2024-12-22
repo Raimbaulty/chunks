@@ -14,7 +14,7 @@ const Navbar = () => {
                         文件转英语块
                     </Link>
                     <Link href="/chunks" className={styles.menuItem}>
-                        英语块广场
+                        英语块练习
                     </Link>
                     <Link href="/about" className={styles.menuItem}>
                         关于

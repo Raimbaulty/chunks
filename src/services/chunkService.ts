@@ -10,5 +10,5 @@ export interface Chunk {
 export const getChunks = async (): Promise<Chunk[]> => {
   // In the future, this could be replaced with an API call
   // return await fetch('/api/chunks').then(res => res.json());
-  return chunksData.chunks;
+  return (await import('../data/chunks.json')).chunks;
 }; 
