@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { EdgeTTS } from '@andresaya/edge-tts';
+import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 
 export async function POST(request: Request) {
     try {
@@ -12,8 +12,21 @@ export async function POST(request: Request) {
             );
         }
 
-        const tts = new EdgeTTS();
+        // 创建音频配置
+        const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
         
+        // 创建语音配置
+        const speechConfig = sdk.SpeechConfig.fromEndpoint(
+            new URL('wss://eastus.api.cognitive.microsoft.com/sts/v1.0/issuetoken'),
+            ''  // 不需要密钥，因为我们使用的是免费服务
+        );
+        
+        // 设置语音参数
+        speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural";
+        
+        // 创建语音合成器
+        const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
+
         // 构建 SSML
         const ssml = `
             <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"
@@ -26,16 +39,31 @@ export async function POST(request: Request) {
             </speak>
         `.trim();
 
-        const audioData = await tts.synthesize({
-            ssml,
-            format: 'audio-24khz-48kbitrate-mono-mp3'
+        // 合成音频
+        const result = await new Promise<sdk.SpeechSynthesisResult>((resolve, reject) => {
+            synthesizer.speakSsmlAsync(
+                ssml,
+                result => {
+                    synthesizer.close();
+                    resolve(result);
+                },
+                error => {
+                    synthesizer.close();
+                    reject(error);
+                }
+            );
         });
 
+        // 检查结果
+        if (result.audioData.length === 0) {
+            throw new Error('No audio data generated');
+        }
+
         // 返回音频数据
-        return new NextResponse(audioData, {
+        return new NextResponse(result.audioData, {
             headers: {
-                'Content-Type': 'audio/mp3',
-                'Content-Length': audioData.length.toString(),
+                'Content-Type': 'audio/wav',
+                'Content-Length': result.audioData.length.toString(),
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
