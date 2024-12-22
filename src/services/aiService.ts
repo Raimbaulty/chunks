@@ -18,7 +18,7 @@ export const generateDialogue = async (
                 'Authorization': `Bearer ${config.apiKey}`,
             },
             body: JSON.stringify({
-                model: 'gemini-2.0-flash-exp',
+                model: 'gemini-exp-1206',
                 messages: [
                     {
                         role: 'user',
@@ -83,13 +83,14 @@ export const generateChunks = async (dialogue: string, config: AIConfig): Promis
                 'Authorization': `Bearer ${config.apiKey}`,
             },
             body: JSON.stringify({
-                model: 'gemini-2.0-flash-exp',
+                model: 'gemini-exp-1206',
                 messages: [
                     {
                         role: 'user',
                         content: `Extract all English chunks (not complete sentences, please understand the requirements carefully) suitable for English beginners from this, and the output format is JSON, including fields that you organize yourself (including chunks themselves, pronunciation phonetic symbols, Chinese meanings and a list of suitable scenes):\n\n${dialogue}`
                     }
-                ]
+                ],
+                stream: false
             })
         });
 
@@ -104,27 +105,35 @@ export const generateChunks = async (dialogue: string, config: AIConfig): Promis
             throw new Error('No content in response');
         }
 
-        // Extract JSON content from the response
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            throw new Error('Failed to extract JSON from response');
-        }
-
         try {
-            const jsonContent = JSON.parse(jsonMatch[0]);
+            const cleanContent = content
+                .replace(/^```json\s*/m, '')  // 移除开头的 ```json
+                .replace(/\s*```\s*$/m, '')   // 移除结尾的 ```
+                .trim();
+
+            console.log('Cleaned content:', cleanContent); // 调试用
+
+            const parsedContent = JSON.parse(cleanContent);
+            
+            const jsonContent = Array.isArray(parsedContent) 
+                ? { chunks: parsedContent }
+                : parsedContent;
+
             if (!jsonContent.chunks || !Array.isArray(jsonContent.chunks)) {
                 throw new Error('Invalid chunks format in response');
             }
 
-            // Ensure each chunk has the required properties
             return jsonContent.chunks.map((chunk: any) => ({
                 chunk: chunk.chunk || '',
                 pronunciation: chunk.pronunciation || '',
-                chinese_meaning: chunk.chinese_meaning || '',
-                suitable_scenes: Array.isArray(chunk.suitable_scenes) ? chunk.suitable_scenes : [],
+                chinese_meaning: chunk.meaning || chunk.chinese_meaning || '',
+                suitable_scenes: Array.isArray(chunk.scenes || chunk.suitable_scenes) 
+                    ? (chunk.scenes || chunk.suitable_scenes) 
+                    : [],
             }));
         } catch (e) {
             console.error('Error parsing JSON:', e);
+            console.error('Content was:', content); // 调试用
             throw new Error('Failed to parse chunks data');
         }
     } catch (error) {

@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { scenes } from '@/data/scenes';
 import { generateDialogue, generateChunks } from '@/services/aiService';
 import ChunkCard from './ChunkCard';
+import MarkdownRenderer from './MarkdownRenderer';
 import styles from './SceneList.module.css';
 
 interface AIConfig {
     apiUrl: string;
     apiKey: string;
 }
+
+const CHUNK_GENERATION_DELAY = 3000; // 3 seconds delay
 
 const SceneList = () => {
     const [selectedScene, setSelectedScene] = useState<string | null>(null);
@@ -33,6 +36,8 @@ const SceneList = () => {
         if (!customSceneInput.trim()) return;
         await generateSceneDialogue('custom', customSceneInput);
     };
+
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     const generateSceneDialogue = async (sceneId: string, customPrompt?: string) => {
         setLoading(true);
@@ -68,20 +73,43 @@ const SceneList = () => {
                 customPrompt || scene!.title,
                 config,
                 (text) => {
-                    setDialogue(text);
+                    // Convert the dialogue to markdown format
+                    const markdownText = text
+                        .split('\n')
+                        .map(line => {
+                            if (line.includes(':')) {
+                                const [speaker, content] = line.split(':').map(part => part.trim());
+                                return `**${speaker}**: ${content}`;
+                            }
+                            return line;
+                        })
+                        .join('\n\n');
+                    setDialogue(markdownText);
                     // Simulate progress for dialogue generation (0-50%)
                     setProgress(Math.min(50, (text.length / 500) * 50));
                 }
             );
 
-            // Then generate chunks
+            // Add a delay before generating chunks
             setProcessingStep('generating-chunks');
-            const generatedChunks = await generateChunks(fullDialogue, config);
-            setChunks(generatedChunks);
-            setProgress(100);
-            setProcessingStep('idle');
-            setIsDialogueExpanded(false);
+            setProgress(60);
+            await delay(CHUNK_GENERATION_DELAY);
+
+            // Then generate chunks
+            try {
+                const generatedChunks = await generateChunks(fullDialogue, config);
+                setChunks(generatedChunks);
+                setProgress(100);
+                setProcessingStep('idle');
+                setIsDialogueExpanded(false);
+            } catch (chunkError) {
+                console.error('Chunk generation error:', chunkError);
+                // If chunk generation fails, still show the dialogue but with an error message
+                setError('英语块生成失败，请稍后重试。您仍然可以查看生成的对话。');
+                setProcessingStep('idle');
+            }
         } catch (err) {
+            console.error('Dialogue generation error:', err);
             setError(err instanceof Error ? err.message : '生成对话时出错');
             setSelectedScene(null);
             setProcessingStep('idle');
@@ -161,9 +189,9 @@ const SceneList = () => {
                                     style={{ width: `${progress}%` }}
                                 />
                             </div>
-                            {processingStep === 'generating-dialogue' && (
+                            {processingStep === 'generating-dialogue' && dialogue && (
                                 <div className={styles.dialoguePreview}>
-                                    <pre>{dialogue}</pre>
+                                    <MarkdownRenderer content={dialogue} />
                                 </div>
                             )}
                         </div>
@@ -171,7 +199,7 @@ const SceneList = () => {
                     
                     {error && <div className={styles.error}>{error}</div>}
                     
-                    {chunks.length > 0 && (
+                    {dialogue && (
                         <>
                             <div className={styles.dialogueCollapse}>
                                 <div 
@@ -198,14 +226,16 @@ const SceneList = () => {
                                     </svg>
                                 </div>
                                 <div className={`${styles.dialogueContent} ${isDialogueExpanded ? styles.expanded : ''}`}>
-                                    <pre>{dialogue}</pre>
+                                    <MarkdownRenderer content={dialogue} />
                                 </div>
                             </div>
-                            <div className={styles.chunksGrid}>
-                                {chunks.map((chunk, index) => (
-                                    <ChunkCard key={index} chunk={chunk} />
-                                ))}
-                            </div>
+                            {chunks.length > 0 && (
+                                <div className={styles.chunksGrid}>
+                                    {chunks.map((chunk, index) => (
+                                        <ChunkCard key={index} chunk={chunk} />
+                                    ))}
+                                </div>
+                            )}
                         </>
                     )}
                 </div>
