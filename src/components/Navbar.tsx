@@ -10,8 +10,17 @@ const Navbar = () => {
                     <Logo />
                 </Link>
                 <div className={styles.menu}>
+                    <Link href="/convert" className={styles.menuItem}>
+                        文件转英语块
+                    </Link>
                     <Link href="/chunks" className={styles.menuItem}>
-                        英语块学习
+                        英语块广场
+                    </Link>
+                    <Link href="/about" className={styles.menuItem}>
+                        关于
+                    </Link>
+                    <Link href="/settings" className={styles.menuItem}>
+                        设置
                     </Link>
                 </div>
             </div>

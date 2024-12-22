@@ -1,0 +1,44 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.title {
+    text-align: center;
+    color: #1a202c;
+    margin-bottom: 3rem;
+    font-size: 2.5rem;
+}
+
+.section {
+    margin-bottom: 2.5rem;
+}
+
+.section h2 {
+    color: #2d3748;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+
+.section p {
+    color: #4a5568;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+.list {
+    list-style-position: inside;
+    color: #4a5568;
+    line-height: 1.7;
+}
+
+.list li {
+    margin-bottom: 1rem;
+}
+
+.list li strong {
+    color: #2d3748;
+} 
