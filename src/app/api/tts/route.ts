@@ -54,16 +54,19 @@ export async function POST(request: Request) {
             );
         });
 
+        // 将 ArrayBuffer 转换为 Uint8Array 以获取长度
+        const audioData = new Uint8Array(result.audioData);
+
         // 检查结果
-        if (result.audioData.length === 0) {
+        if (audioData.length === 0) {
             throw new Error('No audio data generated');
         }
 
         // 返回音频数据
-        return new NextResponse(result.audioData, {
+        return new NextResponse(audioData, {
             headers: {
                 'Content-Type': 'audio/wav',
-                'Content-Length': result.audioData.length.toString(),
+                'Content-Length': audioData.length.toString(),
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
