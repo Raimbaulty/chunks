@@ -2,6 +2,7 @@
     max-width: 800px;
     margin: 0 auto;
     padding: 2rem;
+    color: #1f2937;
 }
 
 .title {
@@ -9,16 +10,22 @@
     color: #1a202c;
     margin-bottom: 3rem;
     font-size: 2.5rem;
+    font-weight: 700;
 }
 
 .section {
-    margin-bottom: 2.5rem;
+    margin-bottom: 3rem;
+}
+
+.section:last-child {
+    margin-bottom: 0;
 }
 
 .section h2 {
     color: #2d3748;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     font-size: 1.5rem;
+    font-weight: 600;
     border-bottom: 2px solid #e2e8f0;
     padding-bottom: 0.5rem;
 }
@@ -27,18 +34,67 @@
     color: #4a5568;
     line-height: 1.7;
     margin-bottom: 1rem;
+    font-size: 1rem;
 }
 
 .list {
-    list-style-position: inside;
-    color: #4a5568;
-    line-height: 1.7;
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 1.5rem;
 }
 
 .list li {
-    margin-bottom: 1rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.list li:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .list li strong {
-    color: #2d3748;
+    display: block;
+    color: #2563eb;
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+}
+
+.list li p {
+    color: #4b5563;
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    .container {
+        padding: 1.5rem;
+    }
+
+    .title {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .section {
+        margin-bottom: 2rem;
+    }
+
+    .section h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .list {
+        gap: 1rem;
+    }
+
+    .list li {
+        padding: 1rem;
+    }
 } 
