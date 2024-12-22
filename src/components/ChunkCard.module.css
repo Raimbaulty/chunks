@@ -1,0 +1,44 @@
+.card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.chunk {
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem 0;
+    color: #2c3e50;
+}
+
+.pronunciation {
+    color: #7f8c8d;
+    font-family: monospace;
+    margin: 0.5rem 0;
+}
+
+.meaning {
+    color: #34495e;
+    margin: 0.5rem 0;
+}
+
+.scenes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.scene {
+    background: #e0f2f1;
+    padding: 0.25rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.875rem;
+    color: #00796b;
+} 
