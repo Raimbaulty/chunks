@@ -16,6 +16,11 @@ interface Settings {
     speed: number;
 }
 
+interface OpenAISpeechSettings {
+    apiUrl: string;
+    apiKey: string;
+}
+
 // 默认设置
 const defaultSettings: Settings = {
     ai: {
@@ -53,6 +58,20 @@ const voices = [
 const SettingsForm = () => {
     const [settings, setSettings] = useState<Settings>(defaultSettings);
     const [message, setMessage] = useState('');
+    const [openAISpeechSettings, setOpenAISpeechSettings] = useState<OpenAISpeechSettings>(() => {
+        const savedSettings = localStorage.getItem('openAISpeechSettings');
+        if (savedSettings) {
+            try {
+                return JSON.parse(savedSettings);
+            } catch (error) {
+                console.error('Error parsing OpenAI speech settings:', error);
+            }
+        }
+        return {
+            apiUrl: '',
+            apiKey: ''
+        };
+    });
 
     // 加载设置
     useEffect(() => {
@@ -108,6 +127,18 @@ const SettingsForm = () => {
             console.error('Error exporting data:', error);
             setMessage('导出数据失败');
         }
+    };
+
+    const handleOpenAISpeechSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setOpenAISpeechSettings(prev => {
+            const newSettings = {
+                ...prev,
+                [name]: value
+            };
+            localStorage.setItem('openAISpeechSettings', JSON.stringify(newSettings));
+            return newSettings;
+        });
     };
 
     return (
@@ -223,6 +254,32 @@ const SettingsForm = () => {
                     />
                 </div>
             </section>
+
+            <div className={styles.section}>
+                <h2 className={styles.sectionTitle}>OpenAI 语音配置（可选）</h2>
+                <div className={styles.field}>
+                    <label htmlFor="openai-speech-api-url">API 地址：</label>
+                    <input
+                        type="text"
+                        id="openai-speech-api-url"
+                        name="apiUrl"
+                        value={openAISpeechSettings.apiUrl}
+                        onChange={handleOpenAISpeechSettingsChange}
+                        placeholder="https://api.openai.com/v1/audio/speech"
+                    />
+                </div>
+                <div className={styles.field}>
+                    <label htmlFor="openai-speech-api-key">API Key：</label>
+                    <input
+                        type="password"
+                        id="openai-speech-api-key"
+                        name="apiKey"
+                        value={openAISpeechSettings.apiKey}
+                        onChange={handleOpenAISpeechSettingsChange}
+                        placeholder="sk-..."
+                    />
+                </div>
+            </div>
 
             <div className={styles.actions}>
                 <button onClick={saveSettings} className={styles.saveButton}>

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import styles from './page.module.css';
+import { SpeechUtils } from '@/utils/speechUtils';
 
 const commonSentences = [
     {
@@ -151,7 +152,7 @@ const commonSentences = [
     {
         text: "**Ain't** that the truth!",
         translation: "可不是嘛！",
-        focus: "注意 Ain't 是 isn't/aren't 的非正式用法",
+        focus: "注意 Ain't 是 isn't/aren't 的���正式用法",
         context: "表示赞同",
         formality: "非常非正式",
         emphasis: ["Ain't"]
@@ -399,28 +400,13 @@ export default function PronunciationPage() {
         }
     };
 
-    const playEdgeTTS = (text: string) => {
-        const savedSettings = localStorage.getItem('userSettings');
-        let voice = 'en-US-JennyNeural';
-        let speed = 1.0;
-
-        if (savedSettings) {
-            try {
-                const settings = JSON.parse(savedSettings);
-                voice = settings.voice || voice;
-                speed = settings.speed || speed;
-            } catch (error) {
-                console.error('Error parsing settings:', error);
-            }
+    const playEdgeTTS = async (text: string) => {
+        try {
+            await SpeechUtils.playTTS(text);
+        } catch (error) {
+            console.error('Error playing TTS:', error);
+            alert('播放语音失败，请检查语音设置。');
         }
-
-        const utterance = new SpeechSynthesisUtterance(text.replace(/\*\*/g, ''));
-        utterance.lang = 'en-US';
-        utterance.rate = speed;
-        utterance.pitch = 1;
-        utterance.volume = 1;
-        utterance.voice = window.speechSynthesis.getVoices().find(v => v.name === voice) || null;
-        window.speechSynthesis.speak(utterance);
     };
 
     const renderText = (text: string, emphasisWords: string[]) => {
