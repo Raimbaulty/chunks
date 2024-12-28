@@ -30,7 +30,7 @@ export default function Navbar() {
                         <Link href="/" className={styles.menuItem}>
                             首页
                         </Link>
-                        <Link href="/chunks" className={styles.menuItem}>
+                        <Link href="/scenes" className={styles.menuItem}>
                             场景练习
                         </Link>
                         <Link href="/pronunciation" className={styles.menuItem}>
