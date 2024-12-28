@@ -58,28 +58,19 @@ const voices = [
 const SettingsForm = () => {
     const [settings, setSettings] = useState<Settings>(defaultSettings);
     const [message, setMessage] = useState('');
-    const [openAISpeechSettings, setOpenAISpeechSettings] = useState<OpenAISpeechSettings>(() => {
-        const savedSettings = localStorage.getItem('openAISpeechSettings');
-        if (savedSettings) {
-            try {
-                return JSON.parse(savedSettings);
-            } catch (error) {
-                console.error('Error parsing OpenAI speech settings:', error);
-            }
-        }
-        return {
-            apiUrl: '',
-            apiKey: ''
-        };
+    const [openAISpeechSettings, setOpenAISpeechSettings] = useState<OpenAISpeechSettings>({
+        apiUrl: '',
+        apiKey: ''
     });
 
     // 加载设置
     useEffect(() => {
+        if (typeof window === 'undefined') return;
+
         const savedSettings = localStorage.getItem('userSettings');
         if (savedSettings) {
             try {
                 const parsed = JSON.parse(savedSettings);
-                // 确保从localStorage加载的数据包含所有必要的字段
                 setSettings({
                     ...defaultSettings,
                     ...parsed,
@@ -91,6 +82,15 @@ const SettingsForm = () => {
             } catch (error) {
                 console.error('Error loading settings:', error);
                 setSettings(defaultSettings);
+            }
+        }
+
+        const savedOpenAISpeechSettings = localStorage.getItem('openAISpeechSettings');
+        if (savedOpenAISpeechSettings) {
+            try {
+                setOpenAISpeechSettings(JSON.parse(savedOpenAISpeechSettings));
+            } catch (error) {
+                console.error('Error parsing OpenAI speech settings:', error);
             }
         }
     }, []);

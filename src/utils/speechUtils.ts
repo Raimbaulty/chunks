@@ -8,14 +8,18 @@ interface OpenAISpeechSettings {
     apiKey: string;
 }
 
+const isBrowser = typeof window !== 'undefined';
+
 export class SpeechUtils {
     private static async getSettings(): Promise<SpeechSettings> {
-        const savedSettings = localStorage.getItem('userSettings');
         const defaultSettings: SpeechSettings = {
             voice: 'en-US-JennyNeural',
             speed: 1.0
         };
 
+        if (!isBrowser) return defaultSettings;
+
+        const savedSettings = localStorage.getItem('userSettings');
         if (savedSettings) {
             try {
                 const settings = JSON.parse(savedSettings);
@@ -31,6 +35,8 @@ export class SpeechUtils {
     }
 
     private static async getOpenAISpeechSettings(): Promise<OpenAISpeechSettings | null> {
+        if (!isBrowser) return null;
+
         const savedSettings = localStorage.getItem('openAISpeechSettings');
         if (savedSettings) {
             try {
@@ -43,6 +49,8 @@ export class SpeechUtils {
     }
 
     private static async playBrowserTTS(text: string): Promise<void> {
+        if (!isBrowser) return;
+
         const settings = await this.getSettings();
         const utterance = new SpeechSynthesisUtterance(text.replace(/\*\*/g, ''));
         utterance.lang = 'en-US';
@@ -54,6 +62,8 @@ export class SpeechUtils {
     }
 
     private static async playOpenAITTS(text: string): Promise<void> {
+        if (!isBrowser) return;
+
         const settings = await this.getOpenAISpeechSettings();
         if (!settings) {
             throw new Error('OpenAI speech settings not configured');
@@ -88,6 +98,8 @@ export class SpeechUtils {
     }
 
     public static async playTTS(text: string): Promise<void> {
+        if (!isBrowser) return;
+
         try {
             const openAISettings = await this.getOpenAISpeechSettings();
             if (openAISettings?.apiUrl && openAISettings?.apiKey) {
