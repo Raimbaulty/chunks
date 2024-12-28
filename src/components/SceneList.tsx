@@ -17,11 +17,13 @@ const SceneList = () => {
     const [processingStep, setProcessingStep] = useState<'idle' | 'generating'>('idle');
     const [progress, setProgress] = useState(0);
     const [customSceneInput, setCustomSceneInput] = useState('');
+    const [additionalContext, setAdditionalContext] = useState('');
     const [isDialogueExpanded, setIsDialogueExpanded] = useState(false);
 
     const handleSceneClick = async (sceneId: string) => {
+        setSelectedScene(sceneId);
+        setAdditionalContext('');  // 清空附加信息
         if (sceneId === 'custom') {
-            setSelectedScene('custom');
             return;
         }
 
@@ -36,12 +38,10 @@ const SceneList = () => {
         if (!checkAndRedirectAPISettings(settings.ai, router)) {
             return;
         }
-
-        await generateSceneDialogue(sceneId);
     };
 
-    const handleCustomSceneSubmit = async () => {
-        if (!customSceneInput.trim()) return;
+    const handleSceneSubmit = async () => {
+        if (selectedScene === 'custom' && !customSceneInput.trim()) return;
 
         const savedSettings = localStorage.getItem('userSettings');
         if (!savedSettings) {
@@ -55,13 +55,12 @@ const SceneList = () => {
             return;
         }
 
-        await generateSceneDialogue('custom', customSceneInput);
+        await generateSceneDialogue(selectedScene!, selectedScene === 'custom' ? customSceneInput : undefined);
     };
 
     const generateSceneDialogue = async (sceneId: string, customPrompt?: string) => {
         setLoading(true);
         setError(null);
-        setSelectedScene(sceneId);
         setDialogue('');
         setChunks([]);
         setProgress(0);
@@ -85,8 +84,14 @@ const SceneList = () => {
             const scene = scenes.find(s => s.id === sceneId);
             if (!scene && !customPrompt) return;
 
+            // 构建完整的场景描述
+            let sceneDescription = customPrompt || scene!.title;
+            if (additionalContext && sceneId !== 'custom') {
+                sceneDescription += ` (Additional context: ${additionalContext})`;
+            }
+
             const result = await generateSceneContent(
-                customPrompt || scene!.title,
+                sceneDescription,
                 config,
                 (dialogueText) => {
                     setDialogue(dialogueText);
@@ -112,6 +117,22 @@ const SceneList = () => {
 
     const getLoadingMessage = () => {
         return processingStep === 'generating' ? '正在生成内容...' : '';
+    };
+
+    const getSceneInputPlaceholder = (sceneId: string) => {
+        const scene = scenes.find(s => s.id === sceneId);
+        if (!scene) return '';
+        
+        switch (sceneId) {
+            case 'custom':
+                return '请输入你想练习的具体场景，例如：在咖啡店点一杯拿铁';
+            case 'chat':
+                return '可以补充具体对象，例如：和同事、和老婆、和朋友等';
+            case 'interview':
+                return '可以补充具体职位，例如：Java程序员、产品经理、设计师等';
+            default:
+                return `可以补充具体场景细节，丰富对话内容`;
+        }
     };
 
     return (
@@ -140,31 +161,40 @@ const SceneList = () => {
                             setDialogue('');
                             setProcessingStep('idle');
                             setCustomSceneInput('');
+                            setAdditionalContext('');
                             setProgress(0);
                         }}
                     >
                         返回场景列表
                     </button>
 
-                    {selectedScene === 'custom' && processingStep === 'idle' && (
-                        <div>
+                    <div className={styles.sceneInputContainer}>
+                        {selectedScene === 'custom' ? (
                             <input
                                 type="text"
-                                className={styles.customSceneInput}
+                                className={styles.sceneInput}
                                 value={customSceneInput}
                                 onChange={(e) => setCustomSceneInput(e.target.value)}
-                                placeholder="请输入你想练习的具体场景，例如：在咖啡店点一杯拿铁"
+                                placeholder={getSceneInputPlaceholder('custom')}
                             />
-                            <button
-                                className={styles.customSceneButton}
-                                onClick={handleCustomSceneSubmit}
-                                disabled={!customSceneInput.trim()}
-                            >
-                                生成对话
-                            </button>
-                        </div>
-                    )}
-                    
+                        ) : (
+                            <input
+                                type="text"
+                                className={styles.sceneInput}
+                                value={additionalContext}
+                                onChange={(e) => setAdditionalContext(e.target.value)}
+                                placeholder={getSceneInputPlaceholder(selectedScene)}
+                            />
+                        )}
+                        <button
+                            className={styles.generateButton}
+                            onClick={handleSceneSubmit}
+                            disabled={(selectedScene === 'custom' && !customSceneInput.trim()) || loading}
+                        >
+                            生成对话
+                        </button>
+                    </div>
+
                     {processingStep !== 'idle' && (
                         <div className={styles.loading}>
                             {getLoadingMessage()}
