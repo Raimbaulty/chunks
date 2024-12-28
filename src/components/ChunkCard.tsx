@@ -20,11 +20,27 @@ const ChunkCard: React.FC<ChunkProps> = ({ chunk }) => {
     };
 
     const playAudio = () => {
+        // 从localStorage获取设置
+        const savedSettings = localStorage.getItem('userSettings');
+        let voice = 'en-US-JennyNeural';
+        let speed = 1.0;
+
+        if (savedSettings) {
+            try {
+                const settings = JSON.parse(savedSettings);
+                voice = settings.voice || voice;
+                speed = settings.speed || speed;
+            } catch (error) {
+                console.error('Error parsing settings:', error);
+            }
+        }
+
         const utterance = new SpeechSynthesisUtterance(safeChunk.chunk);
         utterance.lang = 'en-US';
-        utterance.rate = 0.8;
+        utterance.rate = speed;
         utterance.pitch = 1;
         utterance.volume = 1;
+        utterance.voice = window.speechSynthesis.getVoices().find(v => v.name === voice) || null;
         window.speechSynthesis.speak(utterance);
     };
 
