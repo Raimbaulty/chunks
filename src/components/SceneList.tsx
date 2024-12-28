@@ -142,7 +142,7 @@ const SceneList = () => {
                             setProgress(0);
                         }}
                     >
-                        返回场景���表
+                        返回场景列表
                     </button>
 
                     {selectedScene === 'custom' && processingStep === 'idle' && (
