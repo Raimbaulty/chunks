@@ -33,6 +33,9 @@ export default function Navbar() {
                         <Link href="/chunks" className={styles.menuItem}>
                             场景练习
                         </Link>
+                        <Link href="/pronunciation" className={styles.menuItem}>
+                            发音纠错
+                        </Link>
                         <Link href="/about" className={styles.menuItem}>
                             关于
                         </Link>
