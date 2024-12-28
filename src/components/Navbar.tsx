@@ -31,7 +31,7 @@ export default function Navbar() {
                             首页
                         </Link>
                         <Link href="/chunks" className={styles.menuItem}>
-                            英语块
+                            场景练习
                         </Link>
                         <Link href="/about" className={styles.menuItem}>
                             关于
