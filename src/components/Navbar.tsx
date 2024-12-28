@@ -30,9 +30,6 @@ export default function Navbar() {
                         <Link href="/" className={styles.menuItem}>
                             首页
                         </Link>
-                        <Link href="/convert" className={styles.menuItem}>
-                            文件转英语块
-                        </Link>
                         <Link href="/chunks" className={styles.menuItem}>
                             英语块
                         </Link>
