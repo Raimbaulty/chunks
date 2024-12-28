@@ -78,7 +78,8 @@ const SceneList = () => {
                 provider: settings.ai.provider,
                 apiKey: settings.ai.apiKey,
                 apiUrl: settings.ai.apiUrl,
-                modelName: settings.ai.modelName
+                modelName: settings.ai.modelName,
+                englishLevel: settings.englishLevel
             };
 
             const scene = scenes.find(s => s.id === sceneId);
