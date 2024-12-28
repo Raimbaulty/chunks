@@ -1,6 +1,9 @@
 # English Chunks - 轻松学习地道英语表达
 
-[![Vercel Deployment](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fiwangjie%2Fenglish-chunks&project-name=english-chunks&repository-name=english-chunks)
+一键部署：[![Vercel Deployment](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fiwangjie%2Fenglish-chunks&project-name=english-chunks&repository-name=english-chunks)
+
+您的 ![0E97B714](https://github.com/user-attachments/assets/2d01f855-86f8-491c-8c56-61d85eee093b) 是我更新的动力！！！！！
+
 
 ## 简介
 
