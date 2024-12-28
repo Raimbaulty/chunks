@@ -1,143 +1,203 @@
 import type { Chunk } from './chunkService';
 
 interface AIConfig {
-    apiUrl: string;
+    provider: 'openai' | 'gemini';
     apiKey: string;
+    apiUrl: string;
+    modelName: string;
 }
 
-export const generateDialogue = async (
-    scene: string, 
-    config: AIConfig,
-    onProgress: (text: string) => void
-): Promise<string> => {
-    try {
-        const response = await fetch(`${config.apiUrl}/v1/chat/completions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${config.apiKey}`,
-            },
-            body: JSON.stringify({
-                model: 'gemini-exp-1206',
-                messages: [
-                    {
-                        role: 'user',
-                        content: `Generate a natural dialogue in English for the following scene: ${scene}. 
-                        The dialogue should be realistic, include at least 3 speakers, and cover common expressions 
-                        and phrases used in this situation. Format the dialogue with speaker names and their lines.`
-                    }
-                ],
-                stream: true
-            })
-        });
+interface SceneResponse {
+    dialogue: string;
+    chunks: Chunk[];
+}
 
-        if (!response.ok) {
-            throw new Error('Failed to generate dialogue');
+const SYSTEM_PROMPT = `You are an English learning assistant. Your task is to:
+1. Generate a natural dialogue based on the given scene
+2. Extract useful English chunks from the dialogue
+3. Return both in a structured format
+
+Requirements:
+- The dialogue should be realistic and include 3-4 speakers
+- Each chunk should be a useful phrase or expression (not complete sentences)
+- Each chunk must include pronunciation, Chinese meaning, and suitable scenes
+- Format all speakers in the dialogue as "Speaker: Content"
+
+Response Format:
+{
+    "dialogue": "string (the generated dialogue with speaker names)",
+    "chunks": [
+        {
+            "chunk": "useful English phrase or expression",
+            "pronunciation": "IPA phonetic symbols",
+            "chinese_meaning": "中文含义",
+            "suitable_scenes": ["场景1", "场景2"]
         }
+    ]
+}`;
 
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-        let fullText = '';
+const createRequestBody = (config: AIConfig, scene: string, stream = true) => {
+    const prompt = `Generate an English learning dialogue and chunks for the following scene: ${scene}`;
 
-        if (!reader) {
-            throw new Error('Failed to read response');
-        }
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
-            
-            for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                    const data = line.slice(6);
-                    if (data === '[DONE]') continue;
-                    
-                    try {
-                        const parsed = JSON.parse(data);
-                        const content = parsed.choices[0]?.delta?.content || '';
-                        fullText += content;
-                        onProgress(fullText);
-                    } catch (e) {
-                        console.error('Error parsing streaming response:', e);
-                    }
+    if (config.provider === 'openai') {
+        return {
+            model: config.modelName,
+            messages: [
+                { role: 'system', content: SYSTEM_PROMPT },
+                { role: 'user', content: prompt }
+            ],
+            stream
+        };
+    } else {
+        return {
+            contents: [
+                {
+                    parts: [
+                        { text: SYSTEM_PROMPT + "\n\nUser: " + prompt }
+                    ]
                 }
-            }
-        }
-
-        return fullText;
-    } catch (error) {
-        console.error('Error generating dialogue:', error);
-        throw error;
+            ]
+        };
     }
 };
 
-export const generateChunks = async (dialogue: string, config: AIConfig): Promise<Chunk[]> => {
+const handleStreamResponse = async (
+    response: Response,
+    config: AIConfig,
+    onProgress: (text: string) => void
+): Promise<string> => {
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+
+    if (!reader) {
+        throw new Error('Failed to read response');
+    }
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
+                
+                try {
+                    const parsed = JSON.parse(data);
+                    let content = '';
+                    if (config.provider === 'openai' && parsed.choices?.[0]?.delta?.content) {
+                        content = parsed.choices[0].delta.content;
+                    } else if (config.provider === 'gemini' && parsed.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        content = parsed.candidates[0].content.parts[0].text;
+                    }
+                    fullText += content;
+                    onProgress(fullText);
+                } catch (e) {
+                    console.error('Error parsing streaming response:', e);
+                }
+            }
+        }
+    }
+
+    return fullText;
+};
+
+export const generateSceneContent = async (
+    scene: string, 
+    config: AIConfig,
+    onProgress: (dialogue: string) => void
+): Promise<SceneResponse> => {
     try {
-        const response = await fetch(`${config.apiUrl}/v1/chat/completions`, {
-            method: 'POST',
-            headers: {
+        let endpoint;
+        let headers;
+        let body;
+
+        if (config.provider === 'openai') {
+            endpoint = `${config.apiUrl}/v1/chat/completions`;
+            headers = {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${config.apiKey}`,
-            },
-            body: JSON.stringify({
-                model: 'gemini-exp-1206',
-                messages: [
-                    {
-                        role: 'user',
-                        content: `Extract all English chunks (not complete sentences, please understand the requirements carefully) suitable for English beginners from this, and the output format is JSON, including fields that you organize yourself (including chunks themselves, pronunciation phonetic symbols, Chinese meanings and a list of suitable scenes):\n\n${dialogue}`
-                    }
-                ],
-                stream: false
-            })
+            };
+            body = createRequestBody(config, scene, false);
+        } else {
+            endpoint = `${config.apiUrl}/v1beta/models/${config.modelName}:generateContent?key=${config.apiKey}`;
+            headers = {
+                'Content-Type': 'application/json'
+            };
+            body = createRequestBody(config, scene, false);
+        }
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body)
         });
 
         if (!response.ok) {
-            throw new Error('Failed to generate chunks');
+            throw new Error('Failed to generate scene content');
         }
 
         const data = await response.json();
-        const content = data.choices[0]?.message?.content;
+        let content = '';
+        
+        if (config.provider === 'openai') {
+            content = data.choices[0]?.message?.content;
+        } else {
+            content = data.candidates[0]?.content?.parts[0]?.text;
+        }
 
         if (!content) {
             throw new Error('No content in response');
         }
 
         try {
+            // 清理响应内容，确保它是有效的JSON
             const cleanContent = content
-                .replace(/^```json\s*/m, '')  // 移除开头的 ```json
-                .replace(/\s*```\s*$/m, '')   // 移除结尾的 ```
+                .replace(/^```json\s*/m, '')
+                .replace(/\s*```\s*$/m, '')
                 .trim();
 
-            console.log('Cleaned content:', cleanContent); // 调试用
+            const result = JSON.parse(cleanContent) as SceneResponse;
 
-            const parsedContent = JSON.parse(cleanContent);
-            
-            const jsonContent = Array.isArray(parsedContent) 
-                ? { chunks: parsedContent }
-                : parsedContent;
-
-            if (!jsonContent.chunks || !Array.isArray(jsonContent.chunks)) {
-                throw new Error('Invalid chunks format in response');
+            // 验证响应格式
+            if (!result.dialogue || !Array.isArray(result.chunks)) {
+                throw new Error('Invalid response format');
             }
 
-            return jsonContent.chunks.map((chunk: any) => ({
-                chunk: chunk.chunk || '',
-                pronunciation: chunk.pronunciation || '',
-                chinese_meaning: chunk.meaning || chunk.chinese_meaning || '',
-                suitable_scenes: Array.isArray(chunk.scenes || chunk.suitable_scenes) 
-                    ? (chunk.scenes || chunk.suitable_scenes) 
-                    : [],
-            }));
+            // 格式化对话为Markdown
+            const formattedDialogue = result.dialogue
+                .split('\n')
+                .map(line => {
+                    if (line.includes(':')) {
+                        const [speaker, content] = line.split(':').map(part => part.trim());
+                        return `**${speaker}**: ${content}`;
+                    }
+                    return line;
+                })
+                .join('\n\n');
+
+            onProgress(formattedDialogue);
+
+            return {
+                dialogue: formattedDialogue,
+                chunks: result.chunks.map(chunk => ({
+                    chunk: chunk.chunk || '',
+                    pronunciation: chunk.pronunciation || '',
+                    chinese_meaning: chunk.chinese_meaning || '',
+                    suitable_scenes: Array.isArray(chunk.suitable_scenes) ? chunk.suitable_scenes : [],
+                }))
+            };
         } catch (e) {
-            console.error('Error parsing JSON:', e);
-            console.error('Content was:', content); // 调试用
-            throw new Error('Failed to parse chunks data');
+            console.error('Error parsing response:', e);
+            console.error('Content was:', content);
+            throw new Error('Failed to parse scene content');
         }
     } catch (error) {
-        console.error('Error generating chunks:', error);
+        console.error('Error generating scene content:', error);
         throw error;
     }
 }; 

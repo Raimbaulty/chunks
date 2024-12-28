@@ -5,9 +5,11 @@ import styles from './SettingsForm.module.css';
 
 // 定义设置的类型
 interface Settings {
-    openai: {
+    ai: {
+        provider: 'openai' | 'gemini';
         apiKey: string;
-        baseUrl: string;
+        apiUrl: string;
+        modelName: string;
     };
     englishLevel: string;
     voice: string;
@@ -16,9 +18,11 @@ interface Settings {
 
 // 默认设置
 const defaultSettings: Settings = {
-    openai: {
+    ai: {
+        provider: 'openai',
         apiKey: '',
-        baseUrl: 'https://api.openai.com/v1',
+        apiUrl: 'https://api-proxy.me/openai',
+        modelName: 'gpt-4o',
     },
     englishLevel: 'elementary',
     voice: 'en-US-JennyNeural',
@@ -55,9 +59,19 @@ const SettingsForm = () => {
         const savedSettings = localStorage.getItem('userSettings');
         if (savedSettings) {
             try {
-                setSettings(JSON.parse(savedSettings));
+                const parsed = JSON.parse(savedSettings);
+                // 确保从localStorage加载的数据包含所有必要的字段
+                setSettings({
+                    ...defaultSettings,
+                    ...parsed,
+                    ai: {
+                        ...defaultSettings.ai,
+                        ...(parsed.ai || {}),
+                    }
+                });
             } catch (error) {
                 console.error('Error loading settings:', error);
+                setSettings(defaultSettings);
             }
         }
     }, []);
@@ -99,31 +113,58 @@ const SettingsForm = () => {
     return (
         <div className={styles.form}>
             <section className={styles.section}>
-                <h2>OpenAI 设置</h2>
+                <h2>AI 设置</h2>
+                <div className={styles.field}>
+                    <label htmlFor="provider">AI 提供商</label>
+                    <select
+                        id="provider"
+                        value={settings.ai.provider}
+                        onChange={(e) => setSettings({
+                            ...settings,
+                            ai: { ...settings.ai, provider: e.target.value as 'openai' | 'gemini' }
+                        })}
+                    >
+                        <option value="openai">OpenAI</option>
+                        <option value="gemini">Gemini</option>
+                    </select>
+                </div>
                 <div className={styles.field}>
                     <label htmlFor="apiKey">API Key</label>
                     <input
                         type="password"
                         id="apiKey"
-                        value={settings.openai.apiKey}
+                        value={settings.ai.apiKey}
                         onChange={(e) => setSettings({
                             ...settings,
-                            openai: { ...settings.openai, apiKey: e.target.value }
+                            ai: { ...settings.ai, apiKey: e.target.value }
                         })}
-                        placeholder="输入你的 OpenAI API Key"
+                        placeholder={`输入你的 ${settings.ai.provider === 'openai' ? 'OpenAI' : 'Gemini'} API Key`}
                     />
                 </div>
                 <div className={styles.field}>
-                    <label htmlFor="baseUrl">Base URL</label>
+                    <label htmlFor="apiUrl">API URL</label>
                     <input
                         type="text"
-                        id="baseUrl"
-                        value={settings.openai.baseUrl}
+                        id="apiUrl"
+                        value={settings.ai.apiUrl}
                         onChange={(e) => setSettings({
                             ...settings,
-                            openai: { ...settings.openai, baseUrl: e.target.value }
+                            ai: { ...settings.ai, apiUrl: e.target.value }
                         })}
-                        placeholder="输入 OpenAI API 的基础 URL"
+                        placeholder={`输入 ${settings.ai.provider === 'openai' ? 'OpenAI' : 'Gemini'} API 的URL`}
+                    />
+                </div>
+                <div className={styles.field}>
+                    <label htmlFor="modelName">模型名称</label>
+                    <input
+                        type="text"
+                        id="modelName"
+                        value={settings.ai.modelName}
+                        onChange={(e) => setSettings({
+                            ...settings,
+                            ai: { ...settings.ai, modelName: e.target.value }
+                        })}
+                        placeholder="输入模型名称，如 gpt-3.5-turbo"
                     />
                 </div>
             </section>

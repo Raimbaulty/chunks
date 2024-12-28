@@ -1,24 +1,20 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { scenes } from '@/data/scenes';
-import { generateDialogue, generateChunks } from '@/services/aiService';
+import { generateSceneContent } from '@/services/aiService';
+import { checkAndRedirectAPISettings } from '@/utils/settingsHelper';
 import ChunkCard from './ChunkCard';
 import MarkdownRenderer from './MarkdownRenderer';
 import styles from './SceneList.module.css';
 
-interface AIConfig {
-    apiUrl: string;
-    apiKey: string;
-}
-
-const CHUNK_GENERATION_DELAY = 3000; // 3 seconds delay
-
 const SceneList = () => {
+    const router = useRouter();
     const [selectedScene, setSelectedScene] = useState<string | null>(null);
     const [chunks, setChunks] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [dialogue, setDialogue] = useState<string>('');
-    const [processingStep, setProcessingStep] = useState<'idle' | 'generating-dialogue' | 'generating-chunks'>('idle');
+    const [processingStep, setProcessingStep] = useState<'idle' | 'generating'>('idle');
     const [progress, setProgress] = useState(0);
     const [customSceneInput, setCustomSceneInput] = useState('');
     const [isDialogueExpanded, setIsDialogueExpanded] = useState(false);
@@ -29,15 +25,38 @@ const SceneList = () => {
             return;
         }
 
+        const savedSettings = localStorage.getItem('userSettings');
+        if (!savedSettings) {
+            router.push('/settings');
+            alert('请先配置API设置');
+            return;
+        }
+
+        const settings = JSON.parse(savedSettings);
+        if (!checkAndRedirectAPISettings(settings.ai, router)) {
+            return;
+        }
+
         await generateSceneDialogue(sceneId);
     };
 
     const handleCustomSceneSubmit = async () => {
         if (!customSceneInput.trim()) return;
+
+        const savedSettings = localStorage.getItem('userSettings');
+        if (!savedSettings) {
+            router.push('/settings');
+            alert('请先配置API设置');
+            return;
+        }
+
+        const settings = JSON.parse(savedSettings);
+        if (!checkAndRedirectAPISettings(settings.ai, router)) {
+            return;
+        }
+
         await generateSceneDialogue('custom', customSceneInput);
     };
-
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
     const generateSceneDialogue = async (sceneId: string, customPrompt?: string) => {
         setLoading(true);
@@ -46,71 +65,43 @@ const SceneList = () => {
         setDialogue('');
         setChunks([]);
         setProgress(0);
-        setProcessingStep('generating-dialogue');
+        setProcessingStep('generating');
 
         try {
-            // Get API configuration from localStorage
             const savedSettings = localStorage.getItem('userSettings');
             if (!savedSettings) {
                 throw new Error('请先在设置中配置 API 信息');
             }
 
             const settings = JSON.parse(savedSettings);
-            const config: AIConfig = {
-                apiUrl: settings.openai.baseUrl,
-                apiKey: settings.openai.apiKey,
+            const config = {
+                provider: settings.ai.provider,
+                apiKey: settings.ai.apiKey,
+                apiUrl: settings.ai.apiUrl,
+                modelName: settings.ai.modelName
             };
-
-            if (!config.apiUrl || !config.apiKey) {
-                throw new Error('请先在设置中配置 API URL 和 API Key');
-            }
 
             const scene = scenes.find(s => s.id === sceneId);
             if (!scene && !customPrompt) return;
 
-            // First generate the dialogue with streaming updates
-            const fullDialogue = await generateDialogue(
+            const result = await generateSceneContent(
                 customPrompt || scene!.title,
                 config,
-                (text) => {
-                    // Convert the dialogue to markdown format
-                    const markdownText = text
-                        .split('\n')
-                        .map(line => {
-                            if (line.includes(':')) {
-                                const [speaker, content] = line.split(':').map(part => part.trim());
-                                return `**${speaker}**: ${content}`;
-                            }
-                            return line;
-                        })
-                        .join('\n\n');
-                    setDialogue(markdownText);
-                    // Simulate progress for dialogue generation (0-50%)
-                    setProgress(Math.min(50, (text.length / 500) * 50));
+                (dialogueText) => {
+                    setDialogue(dialogueText);
+                    setProgress(Math.min(90, (dialogueText.length / 500) * 90));
                 }
             );
 
-            // Add a delay before generating chunks
-            setProcessingStep('generating-chunks');
-            setProgress(60);
-            await delay(CHUNK_GENERATION_DELAY);
+            setDialogue(result.dialogue);
+            setChunks(result.chunks);
+            setProgress(100);
+            setProcessingStep('idle');
+            setIsDialogueExpanded(false);
 
-            // Then generate chunks
-            try {
-                const generatedChunks = await generateChunks(fullDialogue, config);
-                setChunks(generatedChunks);
-                setProgress(100);
-                setProcessingStep('idle');
-                setIsDialogueExpanded(false);
-            } catch (chunkError) {
-                console.error('Chunk generation error:', chunkError);
-                // If chunk generation fails, still show the dialogue but with an error message
-                setError('英语块生成失败，请稍后重试。您仍然可以查看生成的对话。');
-                setProcessingStep('idle');
-            }
         } catch (err) {
-            console.error('Dialogue generation error:', err);
-            setError(err instanceof Error ? err.message : '生成对话时出错');
+            console.error('Error generating scene content:', err);
+            setError(err instanceof Error ? err.message : '生成内容时出错');
             setSelectedScene(null);
             setProcessingStep('idle');
         } finally {
@@ -119,14 +110,7 @@ const SceneList = () => {
     };
 
     const getLoadingMessage = () => {
-        switch (processingStep) {
-            case 'generating-dialogue':
-                return '正在生成对话...';
-            case 'generating-chunks':
-                return '正在提取英语块...';
-            default:
-                return '';
-        }
+        return processingStep === 'generating' ? '正在生成内容...' : '';
     };
 
     return (
@@ -158,7 +142,7 @@ const SceneList = () => {
                             setProgress(0);
                         }}
                     >
-                        返回场景列表
+                        返回场景���表
                     </button>
 
                     {selectedScene === 'custom' && processingStep === 'idle' && (
@@ -189,7 +173,7 @@ const SceneList = () => {
                                     style={{ width: `${progress}%` }}
                                 />
                             </div>
-                            {processingStep === 'generating-dialogue' && dialogue && (
+                            {processingStep === 'generating' && dialogue && (
                                 <div className={styles.dialoguePreview}>
                                     <MarkdownRenderer content={dialogue} />
                                 </div>
