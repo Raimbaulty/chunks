@@ -16,7 +16,8 @@
 **开源地址:** [iwangjie/english-chunks](https://github.com/iwangjie/english-chunks)
 
 
-![image](https://github.com/user-attachments/assets/a7043720-538a-4bbb-b49b-787d6c9487f7)
+<img width="820" alt="1735998297579" src="https://github.com/user-attachments/assets/9bcb0c8a-87b9-4b29-8cd9-d10af5ce096b" />
+
 
 ![image](https://github.com/user-attachments/assets/a0636f35-cd21-41c6-86e4-d70cf5088b52)
 
