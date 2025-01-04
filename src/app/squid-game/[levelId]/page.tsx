@@ -25,23 +25,29 @@ export default function LevelPage({ params }: { params: { levelId: string } }) {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('squidGameProgress');
       return saved ? JSON.parse(saved) : {
-        currentLevel: 0,
+        currentLevel: 1,
         stars: 0,
         levelStars: {}
       };
     }
     return {
-      currentLevel: 0,
+      currentLevel: 1,
       stars: 0,
       levelStars: {}
     };
   });
 
   useEffect(() => {
-    if (!level || progress.stars < level.minStars) {
+    if (!level) {
+      router.push('/squid-game');
+      return;
+    }
+
+    const index = levels.findIndex(l => l.id === levelId);
+    if (index > progress.currentLevel || progress.stars < level.minStars) {
       router.push('/squid-game');
     }
-  }, [level, progress.stars, router]);
+  }, [level, levelId, progress.currentLevel, progress.stars, router]);
 
   const handleGameComplete = (earnedStars: number) => {
     const newProgress = {

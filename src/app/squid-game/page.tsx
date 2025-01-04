@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './page.module.css';
 import GameLevel from '@/components/GameLevel';
 import { levels, GameLevel as GameLevelType } from '@/data/gameLevels';
+import { useRouter } from 'next/navigation';
 
 interface GameProgress {
   currentLevel: number;
@@ -11,17 +12,18 @@ interface GameProgress {
 }
 
 export default function SquidGamePage() {
+  const router = useRouter();
   const [progress, setProgress] = useState<GameProgress>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('squidGameProgress');
       return saved ? JSON.parse(saved) : {
-        currentLevel: 0,
+        currentLevel: 1,
         stars: 0,
         levelStars: {}
       };
     }
     return {
-      currentLevel: 0,
+      currentLevel: 1,
       stars: 0,
       levelStars: {}
     };
@@ -33,8 +35,7 @@ export default function SquidGamePage() {
 
   const handleLevelClick = (level: GameLevelType, index: number) => {
     if (index <= progress.currentLevel && progress.stars >= level.minStars) {
-      // TODO: 实现关卡导航逻辑
-      console.log(`Navigating to level ${level.name}`);
+      router.push(`/squid-game/${level.id}`);
     }
   };
 
