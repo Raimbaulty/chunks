@@ -1,0 +1,78 @@
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.startScreen {
+  text-align: center;
+}
+
+.startScreen h2 {
+  font-size: 2rem;
+  color: #ff0062;
+  margin-bottom: 1rem;
+}
+
+.startScreen p {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.startScreen button {
+  padding: 1rem 2rem;
+  background: #ff0062;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.startScreen button:hover {
+  background: #d4004f;
+  transform: translateY(-2px);
+}
+
+.gameScreen {
+  width: 100%;
+  max-width: 600px;
+  text-align: center;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.wordDisplay {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #ff0062;
+  margin: 2rem 0;
+  letter-spacing: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.input {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.5rem;
+  text-align: center;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.input:focus {
+  border-color: #ff0062;
+  box-shadow: 0 0 0 2px rgba(255, 0, 98, 0.2);
+} 
