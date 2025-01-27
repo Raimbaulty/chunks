@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import Logo from './Logo';
 import styles from './Navbar.module.css';
 
@@ -13,6 +14,7 @@ const GitHubIcon = () => (
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const pathname = usePathname();
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -27,19 +29,22 @@ export default function Navbar() {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <div className={`${styles.menu} ${isMenuOpen ? styles.menuOpen : ''}`}>
-                        <Link href="/" className={styles.menuItem}>
+                        <Link href="/" className={`${styles.menuItem} ${pathname === '/' ? styles.active : ''}`}>
                             首页
                         </Link>
-                        <Link href="/scenes" className={styles.menuItem}>
+                        <Link href="/scenes" className={`${styles.menuItem} ${pathname === '/scenes' ? styles.active : ''}`}>
                             场景练习
                         </Link>
-                        <Link href="/pronunciation" className={styles.menuItem}>
+                        <Link href="/pronunciation" className={`${styles.menuItem} ${pathname === '/pronunciation' ? styles.active : ''}`}>
                             发音纠错
                         </Link>
-                        <Link href="/about" className={styles.menuItem}>
+                        <Link href="/squid-game" className={`${styles.menuItem} ${pathname === '/squid-game' ? styles.active : ''}`}>
+                            鱿鱼游戏
+                        </Link>
+                        <Link href="/about" className={`${styles.menuItem} ${pathname === '/about' ? styles.active : ''}`}>
                             关于
                         </Link>
-                        <Link href="/settings" className={styles.menuItem}>
+                        <Link href="/settings" className={`${styles.menuItem} ${pathname === '/settings' ? styles.active : ''}`}>
                             设置
                         </Link>
                     </div>
